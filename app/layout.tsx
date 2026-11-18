@@ -24,9 +24,9 @@ export const metadata: Metadata = {
 
 // 手机壳兜底：安卓 WebView 有时不认 (hover: none) and (pointer: coarse)，
 // 真手机被当成桌面，套上一层手机模型后左右被裁。
-// 这里按「物理屏幕短边 + 触摸点数」强制手机排版，并把 390x844 设计稿整体缩放铺满物理屏。
-// 只对触摸设备、物理短边 <=620 生效，桌面浏览器完全不受影响。
-const SHELL_FIX_SCRIPT = `(function(){try{var s=window.screen;var w=Math.min(s.width,s.height);var touch=(navigator.maxTouchPoints||0)>0;var mq=window.matchMedia("(max-width: 500px) and (hover: none) and (pointer: coarse)").matches;if(touch&&w>0&&w<=620&&!mq){var d=document.documentElement;d.setAttribute("data-force-mobile","1");var z=Math.min(s.width/390,s.height/844);if(isFinite(z)&&z>0){d.style.setProperty("--fp-scale",z.toFixed(4));}}}catch(e){}})();`;
+// 这里按视口宽度强制手机排版，并把 390x844 设计稿整体缩放铺满屏幕。
+// 只对触摸设备生效，桌面浏览器完全不受影响。
+const SHELL_FIX_SCRIPT = `(function(){try{var d=document.documentElement;var touch=(navigator.maxTouchPoints||0)>0;var mq=window.matchMedia("(max-width: 500px) and (hover: none) and (pointer: coarse)").matches;try{document.title="fp "+window.innerWidth+"x"+window.innerHeight+" sw"+screen.width+"x"+screen.height+" dpr"+devicePixelRatio+" mq"+mq;}catch(e9){}if(touch&&!mq){var w=window.innerWidth||390;var h=window.innerHeight||844;var z=Math.min(w/390,h/844);if(!isFinite(z)||z<=0){z=1;}d.setAttribute("data-force-mobile","1");d.style.setProperty("--fp-scale",z>1.001?z.toFixed(4):"1");}}catch(e){}})();`;
 
 const SHELL_FIX_CSS = `html[data-force-mobile]{--phone-screen-width:390px;--phone-screen-height:844px}
 html[data-force-mobile],html[data-force-mobile] body{width:100%;height:100%;overflow:hidden;background:#f1f2f6}
