@@ -22,22 +22,25 @@ export const metadata: Metadata = {
   description: "float",
 };
 
-// 手机壳兜底：安卓 WebView 有时不认 (hover: none) and (pointer: coarse)，
-// 真手机被当成桌面，套上一层手机模型后左右被裁。
-// 这里按视口宽度强制手机排版，并把 390x844 设计稿整体缩放铺满屏幕。
-// 只对触摸设备生效，桌面浏览器完全不受影响。
-const SHELL_FIX_SCRIPT = `(function(){try{var d=document.documentElement;var touch=(navigator.maxTouchPoints||0)>0;var mq=window.matchMedia("(max-width: 500px) and (hover: none) and (pointer: coarse)").matches;try{document.title="fp "+window.innerWidth+"x"+window.innerHeight+" sw"+screen.width+"x"+screen.height+" dpr"+devicePixelRatio+" mq"+mq;}catch(e9){}if(touch&&!mq){var w=window.innerWidth||390;var h=window.innerHeight||844;var z=Math.min(w/390,h/844);if(!isFinite(z)||z<=0){z=1;}d.setAttribute("data-force-mobile","1");d.style.setProperty("--fp-scale",z>1.001?z.toFixed(4):"1");}}catch(e){}})();`;
+// 屏幕兼容兜底（对齐手机端 @media (hover:none)+(pointer:coarse) 块）：
+// 安卓 WebView 里 navigator.maxTouchPoints 可能是 0、媒体查询也可能不命中，
+// 结果真手机被当成桌面，套上 390px 手机模型后左右/底部被裁。
+// 这里改按「视口宽度」判断：窄屏（<=620）一律打 data-force-mobile，
+// 由下面这组样式把手机壳取消、界面铺满整个视口。
+const SHELL_FIX_SCRIPT = `(function(){try{var d=document.documentElement;var w=window.innerWidth||0;if(w>0&&w<=620){d.setAttribute("data-force-mobile","1");}}catch(e){}})();`;
 
-const SHELL_FIX_CSS = `html[data-force-mobile]{--phone-screen-width:390px;--phone-screen-height:844px}
-html[data-force-mobile],html[data-force-mobile] body{width:100%;height:100%;overflow:hidden;background:#f1f2f6}
-html[data-force-mobile] .app-root{position:fixed;left:0;top:0;width:390px;height:844px;max-width:none;padding:0;margin:0;overflow:hidden;display:block;transform:scale(var(--fp-scale,1));transform-origin:top left;background:transparent}
-html[data-force-mobile] .phone-shell-wrap{width:390px!important;margin:0!important;gap:0!important;transform:none!important}
-html[data-force-mobile] .phone-shell-wrap .phone-case{width:390px!important;padding:0!important;border:0!important;border-radius:0!important;background:transparent!important;box-shadow:none!important}
-html[data-force-mobile] .phone-shell-wrap .phone-case::before,html[data-force-mobile] .phone-shell-wrap .phone-case::after{display:none!important}
-html[data-force-mobile] .phone-shell-wrap .phone-frame{width:390px!important;padding:0!important;border-radius:0!important;background:transparent!important;box-shadow:none!important}
-html[data-force-mobile] .phone-shell-wrap .phone-frame::before,html[data-force-mobile] .phone-shell-wrap .phone-frame::after{display:none!important}
-html[data-force-mobile] .phone-shell{width:390px!important;height:844px!important;border-radius:0!important}
-html[data-force-mobile] .phone-screen{width:390px!important;height:844px!important;border-radius:0!important}`;
+const SHELL_FIX_CSS = `html[data-force-mobile]{--phone-screen-width:100vw;--phone-screen-height:100vh}
+html[data-force-mobile],html[data-force-mobile] body{overflow:hidden;width:100%;height:100%;background:var(--c-page-body-bg)}
+html[data-force-mobile] .app-root{width:100vw;height:100vh;padding:0;display:flex;justify-content:flex-start;align-items:flex-start;overflow:hidden;background:var(--c-page-body-bg)}
+html[data-force-mobile] .phone-shell-wrap{--phone-case-padding:0px;--phone-case-border-size:0px;--phone-frame-size:0px;--phone-screen-radius:0px;--phone-frame-radius:0px;--phone-case-radius:0px;width:var(--phone-screen-width);margin-inline:0;gap:0;transform-origin:top left;margin-top:calc(-1 * var(--status-bar-drop, 0px));transform:translate3d(0, calc(-1 * var(--mobile-keyboard-lift, 0px)), 0)}
+html[data-force-mobile] .phone-shell-wrap .phone-case{padding:0;border:0;background:transparent;box-shadow:none}
+html[data-force-mobile] .phone-shell-wrap .phone-case::before,html[data-force-mobile] .phone-shell-wrap .phone-case::after{display:none}
+html[data-force-mobile] .phone-shell-wrap .phone-frame{padding:0;background:transparent;box-shadow:none}
+html[data-force-mobile] .phone-shell-wrap .phone-frame::before,html[data-force-mobile] .phone-shell-wrap .phone-frame::after{display:none}
+html[data-force-mobile] .phone-shell{padding:12px;border-radius:0}
+html[data-force-mobile] .app-root.splash-root{width:100vw;height:100vh;margin:0;padding:0;display:flex;align-items:flex-start;justify-content:flex-start;overflow:hidden;background:var(--c-page-body-bg)}
+html[data-force-mobile] .splash-shell-wrap{width:var(--phone-screen-width);transform-origin:top left}
+html[data-force-mobile] .splash-shell-wrap .phone-case,html[data-force-mobile] .splash-shell-wrap .phone-frame{width:var(--phone-screen-width)}`;
 
 export default function RootLayout({
   children
